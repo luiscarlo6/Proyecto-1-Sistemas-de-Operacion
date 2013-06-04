@@ -1,5 +1,7 @@
 #include "funciones.h"
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 /**
  * Funcion main
  * 
@@ -7,10 +9,11 @@
  */
 int main(int argc, char *argv[])
 {
+    pid_t childpid;
     int datos[3]; 
-    datos[0] = 10; //num_tiradas
-    datos[1] = 1; //semill
-    datos[2] = 1; //num_jug 
+    datos[0] = 10; /*num_tiradas*/
+    datos[1] = 1; /*semill*/
+    datos[2] = 1; /*num_jug */
     switch(argc){
         case 1:
             break;
@@ -24,7 +27,7 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
             
         case 3:
-            if (modifDato(datos,argv[1],argv[2])==-1)
+            if (modifDato(datos,argv[1],argv[2]) == -1)
                 error();
             break;
         case 5:
@@ -33,9 +36,9 @@ int main(int argc, char *argv[])
                 error();
             break;
         case 7:
-            if(modifDato(datos,argv[1],argv[2]) || 
-               modifDato(datos,argv[3],argv[4]) || 
-               modifDato(datos,argv[5],argv[6]))
+            if(modifDato(datos,argv[1],argv[2]) == -1 || 
+               modifDato(datos,argv[3],argv[4]) == -1 || 
+               modifDato(datos,argv[5],argv[6]) == -1)
                 error();
             break;
         default:
@@ -46,5 +49,12 @@ int main(int argc, char *argv[])
     printf("Numero de tiradas: %d\n",datos[0]);
     printf("Semilla: %d\n",datos[1]);
     printf("Jugadores: %d\n",datos[2]);
+    
+    if((childpid = fork())==0){
+        fprintf(stderr,"Soy hijo PID: %d\n",getpid());
+    }
+    else if (childpid>0){
+        fprintf(stderr,"Soy padre PID: %d\n",getpid());
+    }
+    return 0;
 }
-//strcmp( c1->elem, c2->elem ) == 0
