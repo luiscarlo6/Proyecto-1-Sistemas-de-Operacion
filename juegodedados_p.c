@@ -2,6 +2,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <wait.h>
+#include <stdlib.h>
 /**
  * Funcion main
  * 
@@ -10,7 +12,15 @@
 int main(int argc, char *argv[])
 {
     pid_t childpid;
+    pid_t *hijos;
+    int ganador = -1;
+    int mayor = -1;
+    int *semillas;
+    int *resultados;
+    int status;
+    int i;
     int datos[3]; 
+    int result = 31;
     datos[0] = 10; /*num_tiradas*/
     datos[1] = 1; /*semill*/
     datos[2] = 1; /*num_jug */
@@ -50,11 +60,38 @@ int main(int argc, char *argv[])
     printf("Semilla: %d\n",datos[1]);
     printf("Jugadores: %d\n",datos[2]);
     
-    if((childpid = fork())==0){
-        fprintf(stderr,"Soy hijo PID: %d\n",getpid());
+    srand(datos[1]);
+    semillas = malloc(sizeof(int)*(datos[2]));
+    for (i = 0;i<datos[2];i++){
+        semillas[i] = rand();
     }
-    else if (childpid>0){
-        fprintf(stderr,"Soy padre PID: %d\n",getpid());
+    
+    hijos = malloc(sizeof(pid_t)*(datos[2]));
+    for(i = 0; i<datos[2];i++){
+        if ((childpid = fork())<0){
+            perror("fork");
+            exit(1);
+        }
+        if(childpid == 0){
+            hijos[i] = getpid();
+            result = jugar(semillas[i],datos[0], i+1);
+            exit(result);
+        }
     }
+    resultados = malloc(sizeof(int)*(datos[2]));
+    for (i = 0; i<datos[2]; i++){
+        waitpid(hijos[i],&status,0);
+        resultados[i] = WEXITSTATUS(status);
+        if (resultados[i]>mayor){
+            mayor = resultados[i];
+            ganador = i;
+        }
+    }
+    
+    printf("Gana el jugador %d, con %d puntos\n\n",ganador+1, mayor);
+    
+    free(hijos);
+    free(resultados);
+    free(semillas);
     return 0;
 }

@@ -12,4 +12,6 @@ int tipoArg(char *arg);
 
 int modifDato(int datos[], char *arg,char *num);
 
+int jugar(int semilla, int tiradas, int jugador);
+
 #endif
