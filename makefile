@@ -27,4 +27,4 @@ $(PROG2): $(OBJS2)
 	$(CC) $(CFLAGS) -c $< -lpthread
 	
 clean:
-	$(RM) $(PROG1) $(PROG2) $(OBJS1) $(OBJS2) *~ *.o
+	$(RM) $(PROG1) $(PROG2) $(OBJS1) $(OBJS2) *~ *.o tiradas_*
