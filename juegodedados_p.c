@@ -1,14 +1,19 @@
-#include "funciones.h"
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <wait.h>
-#include <stdlib.h>
-/**
- * Funcion main
- * 
- * ejecuta la rutina principal del programa
+/* 
+ * Programa: juegodedados_p
+ * Autores: Daniel Leones 09-10977
+ *          Luiscarlo Rivera 09-11020
+ * Descripcion: Juego de dados que utiliza procesos para representar jugadores
+ * devuelve los resultados en los archivos tiradas_i
+ * Ultima actualización: 10/06/2013 9:19pm 
  */
+#include "jugadores_p.h"
+#include "entrada.h"
+
+/**
+* Funcion main
+* 
+* ejecuta la rutina principal del programa
+*/
 int main(int argc, char *argv[])
 {
     pid_t childpid;
@@ -19,67 +24,60 @@ int main(int argc, char *argv[])
     int *resultados;
     int status;
     int i;
-    int datos[3]; 
     int result = 31;
-    datos[0] = 10; /*num_tiradas*/
-    datos[1] = 1; /*semill*/
-    datos[2] = 1; /*num_jug */
-    switch(argc){
-        case 1:
-            break;
-        case 2:
-            if (tipoArg(argv[1])==4){
-                ayuda();
-            }
-            else{
-                error();
-            }
-            exit(EXIT_FAILURE);
-            
-        case 3:
-            if (modifDato(datos,argv[1],argv[2]) == -1)
-                error();
-            break;
-        case 5:
-            if(modifDato(datos,argv[1],argv[2]) == -1 ||
-               modifDato(datos,argv[3],argv[4]) == -1)
-                error();
-            break;
-        case 7:
-            if(modifDato(datos,argv[1],argv[2]) == -1 || 
-               modifDato(datos,argv[3],argv[4]) == -1 || 
-               modifDato(datos,argv[5],argv[6]) == -1)
-                error();
-            break;
-        default:
-            error();
-            exit(EXIT_FAILURE);
-            
-    }
-    printf("Numero de tiradas: %d\n",datos[0]);
-    printf("Semilla: %d\n",datos[1]);
-    printf("Jugadores: %d\n",datos[2]);
+    int nro_tiradas = 10;
+    int semilla = 1;
+    int nro_jugadores = 0;
+
+/*Pasaje de parametros*/
+    Parametros(&nro_jugadores,&nro_tiradas,&semilla,argc,argv);
+    system("clear");
+    printf("Numero de tiradas: %d\n",nro_tiradas);
+    printf("Semilla: %d\n",semilla);
+    printf("Jugadores: %d\n",nro_jugadores);
+
     
-    srand(datos[1]);
-    semillas = malloc(sizeof(int)*(datos[2]));
-    for (i = 0;i<datos[2];i++){
+    semillas = malloc(sizeof(int)*(nro_jugadores));
+    if (semillas==NULL){
+        printf("ERROR: No hay memoria disponible\n");
+        exit(1);
+    }
+    
+    srand(semilla);
+    /*Genera las semillas para cada proceso*/
+    for (i = 0;i<nro_jugadores;i++){
         semillas[i] = rand();
     }
+
+    hijos = malloc(sizeof(pid_t)*(nro_jugadores));
+    if (hijos==NULL){
+        printf("ERROR: No hay memoria disponible\n");
+        exit(1);
+    }
     
-    hijos = malloc(sizeof(pid_t)*(datos[2]));
-    for(i = 0; i<datos[2];i++){
+    /*Creacion de i procesos hijos(CROUPIER)*/
+    for(i = 0; i<nro_jugadores;i++){
         if ((childpid = fork())<0){
             perror("fork");
             exit(1);
         }
         if(childpid == 0){
             hijos[i] = getpid();
-            result = jugar(semillas[i],datos[0], i+1);
+            result = jugar(rand(),nro_tiradas, i+1);
+            free(hijos);
+            free(semillas);
             exit(result);
         }
     }
-    resultados = malloc(sizeof(int)*(datos[2]));
-    for (i = 0; i<datos[2]; i++){
+
+    resultados = malloc(sizeof(int)*(nro_jugadores));
+    if (resultados==NULL){
+        printf("ERROR: No hay memoria disponible\n");
+        exit(1);
+    }
+
+    /*Buscar ganador*/
+    for (i = 0; i<nro_jugadores; i++){
         waitpid(hijos[i],&status,0);
         resultados[i] = WEXITSTATUS(status);
         if (resultados[i]>mayor){
@@ -87,9 +85,8 @@ int main(int argc, char *argv[])
             ganador = i;
         }
     }
-    
+
     printf("Gana el jugador %d, con %d puntos\n\n",ganador+1, mayor);
-    
     free(hijos);
     free(resultados);
     free(semillas);
